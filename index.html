@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><link rel="manifest" href="manifest.webmanifest">
+<title>Mi Vinted</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f5f7;color:#111827;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#111827;color:#fff;padding:18px 16px 14px;border-radius:0 0 20px 20px}
+h1{font-size:25px;margin:0}.sub{opacity:.72;font-size:13px;margin-top:3px}main{max-width:700px;margin:auto;padding:14px 14px 90px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}.stat{background:#fff;border-radius:14px;padding:12px;text-align:center}.num{font-size:19px;font-weight:800}.lbl{font-size:11px;color:#6b7280}
+.add{width:100%;background:#111827;color:#fff;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:15px;margin-bottom:12px}
+.toolbar{display:flex;gap:8px;margin-bottom:12px}.toolbar input,.toolbar select{min-width:0;flex:1;border:0;background:#fff;padding:12px;border-radius:12px;font-size:14px}
+.card{background:#fff;border-radius:17px;padding:12px;margin-bottom:10px;display:flex;gap:12px;box-shadow:0 1px 6px #0000000a}.photo{width:72px;height:72px;border-radius:12px;background:#e5e7eb;object-fit:cover;flex:none}
+.info{min-width:0;flex:1}.name{font-weight:800;font-size:16px}.meta{font-size:12px;color:#6b7280;margin:3px 0}.price{font-weight:800}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:5px 8px;border-radius:99px;margin-top:5px}.s0{background:#dcfce7;color:#166534}.s1{background:#fef3c7;color:#92400e}.s2{background:#dbeafe;color:#1d4ed8}.s3{background:#ede9fe;color:#6d28d9}
+.actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.actions button,.video{border:0;border-radius:10px;padding:8px 10px;background:#f3f4f6;font-size:12px;font-weight:700;text-decoration:none;color:#111827}.delete{color:#b91c1c!important}
+.empty{text-align:center;color:#6b7280;padding:35px 15px}dialog{border:0;border-radius:20px;width:min(92%,520px);padding:0;box-shadow:0 20px 60px #0004}dialog::backdrop{background:#0006}.modal{padding:20px}.modal h2{margin:0 0 15px}
+.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:#4b5563}.field input{width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:11px;font-size:15px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;margin-top:16px}.cancel,.save{flex:1;border:0;border-radius:12px;padding:12px;font-weight:800}.cancel{background:#f3f4f6}.save{background:#111827;color:#fff}.note{font-size:11px;color:#6b7280;margin-top:-5px;margin-bottom:12px}
+</style></head>
+<body>
+<header><h1>📦 Mi Vinted</h1><div class="sub">Tu inventario de Vinted, todo en un solo lugar</div></header>
+<main>
+<section class="stats">
+<div class="stat"><div class="num" id="total">0</div><div class="lbl">Productos</div></div>
+<div class="stat"><div class="num" id="sold">0 €</div><div class="lbl">Ventas</div></div>
+<div class="stat"><div class="num" id="profit">0 €</div><div class="lbl">Beneficio</div></div>
+</section>
+<button class="add" id="addBtn">＋ Añadir producto</button>
+<div class="toolbar"><input id="search" placeholder="🔎 Buscar..." autocomplete="off"><select id="filter"><option value="all">Todos</option><option value="0">En venta</option><option value="1">Vendido</option><option value="2">Enviado</option><option value="3">Cobrado</option></select></div>
+<div id="list"></div></main>
+
+<dialog id="dlg"><form class="modal" id="form">
+<h2>Añadir producto</h2>
+<div class="field"><label>Nombre del producto</label><input id="name" placeholder="Ej. Camiseta Nike" required></div>
+<div class="row"><div class="field"><label>Marca</label><input id="brand" placeholder="Nike"></div><div class="field"><label>Talla</label><input id="size" placeholder="M"></div></div>
+<div class="row"><div class="field"><label>Precio de compra (€)</label><input id="buy" type="number" step=".01" min="0" placeholder="5"></div><div class="field"><label>Precio de venta (€)</label><input id="sell" type="number" step=".01" min="0" placeholder="15"></div></div>
+<div class="field"><label>Foto del producto</label><input id="photo" type="file" accept="image/*"></div>
+<div class="field"><label>Vídeo de prueba — enlace de Google Drive</label><input id="video" type="url" placeholder="https://drive.google.com/..."></div>
+<div class="note">Guarda aquí el enlace al vídeo en el que grabaste cómo preparas y empaquetas el pedido. Aparecerá como un botón dentro del producto.</div>
+<div class="modal-actions"><button type="button" class="cancel" id="cancelBtn">Cancelar</button><button class="save" type="submit">Guardar producto</button></div>
+</form></dialog>
+
+<script>
+const CLAVE="mi_vinted_productos_v3";let productos=[];const estados=["En venta","Vendido","Enviado","Cobrado"],iconos=["🟢","🟠","🔵","✅"];
+const $=id=>document.getElementById(id),dlg=$("dlg");
+function cargar(){try{productos=JSON.parse(localStorage.getItem(CLAVE)||"[]")}catch(e){productos=[]}}
+function guardar(){localStorage.setItem(CLAVE,JSON.stringify(productos));renderizar()}
+function abrirFormulario(){$("form").reset();dlg.showModal()}
+$("addBtn").onclick=abrirFormulario;$("cancelBtn").onclick=()=>dlg.close();
+$("form").onsubmit=e=>{e.preventDefault();const p={id:Date.now(),nombre:$("name").value.trim(),marca:$("brand").value.trim(),talla:$("size").value.trim(),compra:+$("buy").value||0,venta:+$("sell").value||0,video:$("video").value.trim(),foto:"",estado:0};const f=$("photo").files[0];const terminar=()=>{productos.unshift(p);guardar();dlg.close()};if(f){const r=new FileReader();r.onload=()=>{p.foto=r.result;terminar()};r.readAsDataURL(f)}else terminar()};
+function avanzar(id){const p=productos.find(x=>x.id===id);if(p&&p.estado<3){p.estado++;guardar()}}
+function eliminar(id){if(confirm("¿Quieres eliminar este producto?")){productos=productos.filter(x=>x.id!==id);guardar()}}
+function escapar(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderizar(){const q=$("search").value.toLowerCase(),f=$("filter").value;const mostrados=productos.filter(p=>(f==="all"||p.estado==f)&&(p.nombre+" "+p.marca+" "+p.talla).toLowerCase().includes(q));$("total").textContent=productos.length;$("sold").textContent=productos.filter(p=>p.estado>0).reduce((a,p)=>a+p.venta,0).toFixed(2)+" €";$("profit").textContent=productos.filter(p=>p.estado===3).reduce((a,p)=>a+p.venta-p.compra,0).toFixed(2)+" €";$("list").innerHTML=mostrados.length?mostrados.map(p=>`<article class="card">${p.foto?`<img class="photo" src="${p.foto}" alt="">`:`<div class="photo" style="display:grid;place-items:center;font-size:28px">👕</div>`}<div class="info"><div class="name">${escapar(p.nombre)}</div><div class="meta">${escapar(p.marca||"Sin marca")} · ${escapar(p.talla||"Sin talla")}</div><div class="price">${p.venta.toFixed(2)} €</div><span class="badge s${p.estado}">${iconos[p.estado]} ${estados[p.estado]}</span><div class="actions">${p.video?`<a class="video" href="${escapar(p.video)}" target="_blank" rel="noopener">🎥 Vídeo de prueba</a>`:""}${p.estado<3?`<button onclick="avanzar(${p.id})">→ ${estados[p.estado+1]}</button>`:""}<button class="delete" onclick="eliminar(${p.id})">Eliminar</button></div></div></article>`).join(""):`<div class="empty">Todavía no tienes productos.<br>Pulsa «Añadir producto» para empezar 👆</div>`}
+$("search").oninput=renderizar;$("filter").onchange=renderizar;cargar();renderizar();if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
+</script></body></html>
